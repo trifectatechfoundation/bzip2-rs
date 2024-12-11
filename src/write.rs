@@ -203,7 +203,8 @@ impl<W: Write> BzDecoder<W> {
     ///
     /// [`write`]: Self::write
     pub fn try_finish(&mut self) -> io::Result<()> {
-        while !self.done {
+        // If nothing was written, there is no need to loop
+        while !self.done && self.total_in() > 0 {
             let _ = self.write(&[])?;
         }
         self.dump()
@@ -307,6 +308,13 @@ mod tests {
         let _ = c.write(b"").unwrap();
         let data = c.finish().unwrap().finish().unwrap();
         assert_eq!(&data[..], b"");
+    }
+
+    #[test]
+    fn write_empty2() {
+        let mut d = BzDecoder::new(Vec::new());
+        d.write(b"").unwrap();
+        d.finish().unwrap();
     }
 
     #[test]
