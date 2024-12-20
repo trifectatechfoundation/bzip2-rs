@@ -4,8 +4,12 @@ extern crate pkg_config;
 use std::path::PathBuf;
 use std::{env, fs};
 
-#[cfg(not(feature = "__disabled"))]
 fn main() {
+    // skip building the C library when libbzip2-rs is also used
+    if cfg!(feature = "__disabled") {
+        return;
+    }
+
     let mut cfg = cc::Build::new();
     let target = env::var("TARGET").unwrap();
     cfg.warnings(false);
@@ -46,6 +50,3 @@ fn main() {
     println!("cargo:root={}", dst.display());
     println!("cargo:include={}", dst.join("include").display());
 }
-
-#[cfg(feature = "__disabled")]
-fn main() {}
