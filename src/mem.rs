@@ -6,7 +6,7 @@ use std::marker;
 use std::mem;
 use std::slice;
 
-use libc::{c_int, c_uint};
+use core::ffi::{c_int, c_uint};
 
 use crate::{ffi, Compression};
 
