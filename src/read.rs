@@ -192,8 +192,8 @@ mod tests {
     use crate::Compression;
     use partial_io::quickcheck_types::{GenInterrupted, PartialWithErrors};
     use partial_io::PartialRead;
-    use rand::distributions::Standard;
-    use rand::{thread_rng, Rng};
+    use rand::distr::StandardUniform;
+    use rand::{rng, Rng};
     use std::io::Read;
 
     #[test]
@@ -236,8 +236,8 @@ mod tests {
         let mut result = Vec::new();
         c.read_to_end(&mut result).unwrap();
 
-        let v = thread_rng()
-            .sample_iter(&Standard)
+        let v = rng()
+            .sample_iter(&StandardUniform)
             .take(1024)
             .collect::<Vec<u8>>();
         for _ in 0..200 {
