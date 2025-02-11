@@ -17,7 +17,7 @@ a drop-in compatible rust implementation of `libbz2`. With this feature enabled,
 like any other rust code, and no C toolchain is needed to compile this crate or its dependencies.
 
 ```sh
-bzip2 = { version = "0.5.0", default-features = false, features = ["libbz2-rs-sys"] }
+bzip2 = { version = "0.5.1", default-features = false, features = ["libbz2-rs-sys"] }
 ```
 
 *`static`*
