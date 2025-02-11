@@ -50,6 +50,17 @@ jobs:
         rustup update $TOOLCHAIN --no-self-update && rustup default $TOOLCHAIN
       shell: bash
       if: matrix.build == 'msrv'
+    - name: Run cargo doc, deny warnings
+      env:
+        RUSTDOCFLAGS: "-D warnings"
+      run: |
+        cargo doc -p bzip2-sys --no-deps
+        cargo doc -p bzip2 --no-deps
+    - name: Run cargo doc, deny warnings (libbz2-rs-sys)
+      env:
+          RUSTDOCFLAGS: "-Dwarnings"
+      if: matrix.build != 'msrv'
+      run: cargo doc -p bzip2 --no-deps --no-default-features --features libbz2-rs-sys
     - run: cargo test
     - run: cargo test --no-default-features --features libbz2-rs-sys
       if: matrix.build != 'msrv'
