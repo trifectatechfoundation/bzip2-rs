@@ -1,8 +1,7 @@
 #![doc(html_root_url = "https://docs.rs/bzip2-sys/0.1")]
+#![no_std]
 
-extern crate libc;
-
-use std::ffi::{c_char, c_int, c_uint, c_void};
+use core::ffi::{c_char, c_int, c_uint, c_void};
 
 pub const BZ_RUN: c_int = 0;
 pub const BZ_FLUSH: c_int = 1;

@@ -19,7 +19,6 @@ name = "bzip2_sys"
 path = "lib.rs"
 
 [dependencies]
-libc = "0.2"
 
 [build-dependencies]
 pkg-config = "0.3.9"
