@@ -69,6 +69,6 @@ abi_compat! {
 }
 
 #[no_mangle]
-pub fn bz_internal_error(errcode: c_int) {
+pub extern "C" fn bz_internal_error(errcode: c_int) {
     panic!("bz internal error: {}", errcode);
 }
