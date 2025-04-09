@@ -23,7 +23,7 @@ pub const BZ_OUTBUFF_FULL: c_int = -8;
 pub const BZ_CONFIG_ERROR: c_int = -9;
 
 #[repr(C)]
-pub struct bz_stream {
+pub struct BzStream {
     pub next_in: *mut c_char,
     pub avail_in: c_uint,
     pub total_in_lo32: c_uint,
@@ -44,31 +44,31 @@ pub struct bz_stream {
 macro_rules! abi_compat {
     ($(pub fn $name:ident($($arg:ident: $t:ty),*) -> $ret:ty,)*) => {
         #[cfg(windows)]
-        extern "system" {
+        unsafe extern "system" {
             $(pub fn $name($($arg: $t),*) -> $ret;)*
         }
         #[cfg(not(windows))]
-        extern {
+        unsafe extern "C" {
             $(pub fn $name($($arg: $t),*) -> $ret;)*
         }
     }
 }
 
 abi_compat! {
-    pub fn BZ2_bzCompressInit(stream: *mut bz_stream,
-                              blockSize100k: c_int,
+    pub fn BZ2_bzCompressInit(stream: *mut BzStream,
+                              block_size100k: c_int,
                               verbosity: c_int,
-                              workFactor: c_int) -> c_int,
-    pub fn BZ2_bzCompress(stream: *mut bz_stream, action: c_int) -> c_int,
-    pub fn BZ2_bzCompressEnd(stream: *mut bz_stream) -> c_int,
-    pub fn BZ2_bzDecompressInit(stream: *mut bz_stream,
+                              work_factor: c_int) -> c_int,
+    pub fn BZ2_bzCompress(stream: *mut BzStream, action: c_int) -> c_int,
+    pub fn BZ2_bzCompressEnd(stream: *mut BzStream) -> c_int,
+    pub fn BZ2_bzDecompressInit(stream: *mut BzStream,
                                 verbosity: c_int,
                                 small: c_int) -> c_int,
-    pub fn BZ2_bzDecompress(stream: *mut bz_stream) -> c_int,
-    pub fn BZ2_bzDecompressEnd(stream: *mut bz_stream) -> c_int,
+    pub fn BZ2_bzDecompress(stream: *mut BzStream) -> c_int,
+    pub fn BZ2_bzDecompressEnd(stream: *mut BzStream) -> c_int,
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn bz_internal_error(errcode: c_int) {
     panic!("bz internal error: {}", errcode);
 }

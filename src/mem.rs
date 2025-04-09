@@ -27,7 +27,7 @@ pub struct Decompress {
 
 struct Stream<D: Direction> {
     // libbz2 requires a stable address for this stream.
-    raw: Box<ffi::bz_stream>,
+    raw: Box<ffi::BzStream>,
     _marker: marker::PhantomData<D>,
 }
 
@@ -35,7 +35,7 @@ unsafe impl<D: Direction> Send for Stream<D> {}
 unsafe impl<D: Direction> Sync for Stream<D> {}
 
 trait Direction {
-    unsafe fn destroy(stream: *mut ffi::bz_stream) -> c_int;
+    unsafe fn destroy(stream: *mut ffi::BzStream) -> c_int;
 }
 
 enum DirCompress {}
@@ -117,7 +117,7 @@ impl Compress {
     ///
     /// Allowable values range from 0 to 250 inclusive. 0 is a special case,
     /// equivalent to using the default value of 30.
-    pub fn new(lvl: Compression, work_factor: u32) -> Compress {
+    #[must_use] pub fn new(lvl: Compression, work_factor: u32) -> Compress {
         unsafe {
             let mut raw = Box::new(mem::zeroed());
             assert_eq!(
@@ -196,12 +196,12 @@ impl Compress {
     }
 
     /// Total number of bytes processed as input
-    pub fn total_in(&self) -> u64 {
+    #[must_use] pub fn total_in(&self) -> u64 {
         self.inner.total_in()
     }
 
     /// Total number of bytes processed as output
-    pub fn total_out(&self) -> u64 {
+    #[must_use] pub fn total_out(&self) -> u64 {
         self.inner.total_out()
     }
 }
@@ -213,7 +213,7 @@ impl Decompress {
     /// decompression algorithm which uses less memory but at the cost of
     /// decompressing more slowly (roughly speaking, half the speed, but the
     /// maximum memory requirement drops to around 2300k).
-    pub fn new(small: bool) -> Decompress {
+    #[must_use] pub fn new(small: bool) -> Decompress {
         unsafe {
             let mut raw = Box::new(mem::zeroed());
             assert_eq!(ffi::BZ2_bzDecompressInit(&mut *raw, 0, small as c_int), 0);
@@ -241,7 +241,7 @@ impl Decompress {
                 ffi::BZ_DATA_ERROR => Err(Error::Data),
                 ffi::BZ_DATA_ERROR_MAGIC => Err(Error::DataMagic),
                 ffi::BZ_SEQUENCE_ERROR => Err(Error::Sequence),
-                c => panic!("wut: {}", c),
+                c => panic!("wut: {c}"),
             }
         }
     }
@@ -269,12 +269,12 @@ impl Decompress {
     }
 
     /// Total number of bytes processed as input
-    pub fn total_in(&self) -> u64 {
+    #[must_use] pub fn total_in(&self) -> u64 {
         self.inner.total_in()
     }
 
     /// Total number of bytes processed as output
-    pub fn total_out(&self) -> u64 {
+    #[must_use] pub fn total_out(&self) -> u64 {
         self.inner.total_out()
     }
 }
@@ -310,13 +310,13 @@ impl From<Error> for std::io::Error {
 }
 
 impl Direction for DirCompress {
-    unsafe fn destroy(stream: *mut ffi::bz_stream) -> c_int {
-        ffi::BZ2_bzCompressEnd(stream)
+    unsafe fn destroy(stream: *mut ffi::BzStream) -> c_int {
+        unsafe { ffi::BZ2_bzCompressEnd(stream) }
     }
 }
 impl Direction for DirDecompress {
-    unsafe fn destroy(stream: *mut ffi::bz_stream) -> c_int {
-        ffi::BZ2_bzDecompressEnd(stream)
+    unsafe fn destroy(stream: *mut ffi::BzStream) -> c_int {
+        unsafe { ffi::BZ2_bzDecompressEnd(stream) }
     }
 }
 
