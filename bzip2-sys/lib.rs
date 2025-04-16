@@ -48,7 +48,7 @@ macro_rules! abi_compat {
             $(pub fn $name($($arg: $t),*) -> $ret;)*
         }
         #[cfg(not(windows))]
-        extern {
+        extern "C" {
             $(pub fn $name($($arg: $t),*) -> $ret;)*
         }
     }
