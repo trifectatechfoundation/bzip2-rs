@@ -56,9 +56,9 @@
 #![deny(missing_docs)]
 #![doc(html_root_url = "https://docs.rs/bzip2/")]
 
-#[cfg(not(feature = "libbz2-rs-sys"))]
+#[cfg(feature = "bzip2-sys")]
 extern crate bzip2_sys as ffi;
-#[cfg(feature = "libbz2-rs-sys")]
+#[cfg(not(feature = "bzip2-sys"))]
 extern crate libbz2_rs_sys as ffi;
 #[cfg(test)]
 extern crate partial_io;

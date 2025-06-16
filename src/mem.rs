@@ -305,7 +305,7 @@ impl fmt::Display for Error {
 
 impl From<Error> for std::io::Error {
     fn from(data: Error) -> std::io::Error {
-        std::io::Error::new(std::io::ErrorKind::Other, data)
+        std::io::Error::other(data)
     }
 }
 
