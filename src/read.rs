@@ -21,8 +21,8 @@ pub struct BzDecoder<R> {
 impl<R: Read> BzEncoder<R> {
     /// Create a new compression stream which will compress at the given level
     /// to read compress output to the give output stream.
-    pub fn new(r: R, level: Compression) -> BzEncoder<R> {
-        BzEncoder {
+    pub fn new(r: R, level: Compression) -> Self {
+        Self {
             inner: bufread::BzEncoder::new(BufReader::new(r), level),
         }
     }
@@ -84,8 +84,8 @@ impl<W: Write + Read> Write for BzEncoder<W> {
 impl<R: Read> BzDecoder<R> {
     /// Create a new decompression stream, which will read compressed
     /// data from the given input stream and decompress it.
-    pub fn new(r: R) -> BzDecoder<R> {
-        BzDecoder {
+    pub fn new(r: R) -> Self {
+        Self {
             inner: bufread::BzDecoder::new(BufReader::new(r)),
         }
     }
@@ -153,8 +153,8 @@ impl<R: Read> MultiBzDecoder<R> {
     /// Creates a new decoder from the given reader, immediately parsing the
     /// (first) gzip header. If the gzip stream contains multiple members all will
     /// be decoded.
-    pub fn new(r: R) -> MultiBzDecoder<R> {
-        MultiBzDecoder {
+    pub fn new(r: R) -> Self {
+        Self {
             inner: bufread::MultiBzDecoder::new(BufReader::new(r)),
         }
     }
