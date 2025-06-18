@@ -88,7 +88,7 @@ impl Compression {
     /// A level outside of the `1..=9` range will throw a panic. Use [`Self::try_new`] to
     /// gracefully handle invalid levels (e.g. from user input).
     #[track_caller]
-    pub const fn new(level: u32) -> Compression {
+    pub const fn new(level: u32) -> Self {
         match Self::try_new(level) {
             Some(v) => v,
             None => panic!("expected a compression level in the range 1..=9"),
@@ -96,27 +96,27 @@ impl Compression {
     }
 
     /// Create a new compression spec with a specific numeric level in the range `1..=9`.
-    pub const fn try_new(level: u32) -> Option<Compression> {
+    pub const fn try_new(level: u32) -> Option<Self> {
         match level {
-            1..=9 => Some(Compression(level)),
+            1..=9 => Some(Self(level)),
             _ => None,
         }
     }
 
     /// Do not compress.
     #[deprecated(since = "0.5.1", note = "libbz2 does not support compression level 0")]
-    pub fn none() -> Compression {
-        Compression(0)
+    pub fn none() -> Self {
+        Self(0)
     }
 
     /// Optimize for the best speed of encoding.
-    pub const fn fast() -> Compression {
-        Compression(1)
+    pub const fn fast() -> Self {
+        Self(1)
     }
 
     /// Optimize for smallest output size.
-    pub const fn best() -> Compression {
-        Compression(9)
+    pub const fn best() -> Self {
+        Self(9)
     }
 
     /// Return the compression level as an integer.
@@ -127,8 +127,8 @@ impl Compression {
 
 impl Default for Compression {
     /// Choose the default compression, a balance between speed and size.
-    fn default() -> Compression {
-        Compression(6)
+    fn default() -> Self {
+        Self(6)
     }
 }
 

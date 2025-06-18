@@ -28,8 +28,8 @@ pub struct BzDecoder<W: Write> {
 impl<W: Write> BzEncoder<W> {
     /// Create a new compression stream which will compress at the given level
     /// to write compress output to the give output stream.
-    pub fn new(obj: W, level: Compression) -> BzEncoder<W> {
-        BzEncoder {
+    pub fn new(obj: W, level: Compression) -> Self {
+        Self {
             data: Compress::new(level, 30),
             obj: Some(obj),
             buf: Vec::with_capacity(32 * 1024),
@@ -162,8 +162,8 @@ impl<W: Write> Write for BzEncoder<W> {
 impl<W: Write> BzDecoder<W> {
     /// Create a new decoding stream which will decompress all data written
     /// to it into `obj`.
-    pub fn new(obj: W) -> BzDecoder<W> {
-        BzDecoder {
+    pub fn new(obj: W) -> Self {
+        Self {
             data: Decompress::new(false),
             obj: Some(obj),
             buf: Vec::with_capacity(32 * 1024),

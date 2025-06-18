@@ -29,8 +29,8 @@ pub struct BzDecoder<R> {
 impl<R: BufRead> BzEncoder<R> {
     /// Creates a new encoder which will read uncompressed data from the given
     /// stream and emit the compressed stream.
-    pub fn new(r: R, level: Compression) -> BzEncoder<R> {
-        BzEncoder {
+    pub fn new(r: R, level: Compression) -> Self {
+        Self {
             obj: r,
             data: Compress::new(level, 30),
             done: false,
@@ -127,8 +127,8 @@ impl<W: Write> Write for BzEncoder<W> {
 impl<R: BufRead> BzDecoder<R> {
     /// Creates a new decoder which will decompress data read from the given
     /// stream.
-    pub fn new(r: R) -> BzDecoder<R> {
-        BzDecoder {
+    pub fn new(r: R) -> Self {
+        Self {
             obj: r,
             data: Decompress::new(false),
             done: false,
@@ -136,7 +136,7 @@ impl<R: BufRead> BzDecoder<R> {
         }
     }
 
-    fn multi(mut self, flag: bool) -> BzDecoder<R> {
+    fn multi(mut self, flag: bool) -> Self {
         self.multi = flag;
         self
     }
@@ -240,8 +240,8 @@ pub struct MultiBzDecoder<R>(BzDecoder<R>);
 impl<R: BufRead> MultiBzDecoder<R> {
     /// Creates a new decoder from the given reader. If the bzip2 stream contains multiple members
     /// all will be decoded.
-    pub fn new(r: R) -> MultiBzDecoder<R> {
-        MultiBzDecoder(BzDecoder::new(r).multi(true))
+    pub fn new(r: R) -> Self {
+        Self(BzDecoder::new(r).multi(true))
     }
 }
 

@@ -117,14 +117,14 @@ impl Compress {
     ///
     /// Allowable values range from 0 to 250 inclusive. 0 is a special case,
     /// equivalent to using the default value of 30.
-    pub fn new(lvl: Compression, work_factor: u32) -> Compress {
+    pub fn new(lvl: Compression, work_factor: u32) -> Self {
         unsafe {
             let mut raw = Box::new(mem::zeroed());
             assert_eq!(
                 ffi::BZ2_bzCompressInit(&mut *raw, lvl.level() as c_int, 0, work_factor as c_int),
                 0
             );
-            Compress {
+            Self {
                 inner: Stream {
                     raw,
                     _marker: marker::PhantomData,
@@ -163,7 +163,7 @@ impl Compress {
                 ffi::BZ_FINISH_OK => Ok(Status::FinishOk),
                 ffi::BZ_STREAM_END => Ok(Status::StreamEnd),
                 ffi::BZ_SEQUENCE_ERROR => Err(Error::Sequence),
-                c => panic!("unknown return status: {}", c),
+                c => panic!("unknown return status: {c}"),
             }
         }
     }
@@ -213,11 +213,11 @@ impl Decompress {
     /// decompression algorithm which uses less memory but at the cost of
     /// decompressing more slowly (roughly speaking, half the speed, but the
     /// maximum memory requirement drops to around 2300k).
-    pub fn new(small: bool) -> Decompress {
+    pub fn new(small: bool) -> Self {
         unsafe {
             let mut raw = Box::new(mem::zeroed());
             assert_eq!(ffi::BZ2_bzDecompressInit(&mut *raw, 0, small as c_int), 0);
-            Decompress {
+            Self {
                 inner: Stream {
                     raw,
                     _marker: marker::PhantomData,
@@ -241,7 +241,7 @@ impl Decompress {
                 ffi::BZ_DATA_ERROR => Err(Error::Data),
                 ffi::BZ_DATA_ERROR_MAGIC => Err(Error::DataMagic),
                 ffi::BZ_SEQUENCE_ERROR => Err(Error::Sequence),
-                c => panic!("wut: {}", c),
+                c => panic!("wut: {c}"),
             }
         }
     }
@@ -294,18 +294,18 @@ impl error::Error for Error {}
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let description = match self {
-            Error::Sequence => "bzip2: sequence of operations invalid",
-            Error::Data => "bzip2: invalid data",
-            Error::DataMagic => "bzip2: bz2 header missing",
-            Error::Param => "bzip2: invalid parameters",
+            Self::Sequence => "bzip2: sequence of operations invalid",
+            Self::Data => "bzip2: invalid data",
+            Self::DataMagic => "bzip2: bz2 header missing",
+            Self::Param => "bzip2: invalid parameters",
         };
         f.write_str(description)
     }
 }
 
 impl From<Error> for std::io::Error {
-    fn from(data: Error) -> std::io::Error {
-        std::io::Error::other(data)
+    fn from(data: Error) -> Self {
+        Self::other(data)
     }
 }
 
