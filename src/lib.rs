@@ -34,7 +34,7 @@
 //! Some tools such as pbzip2 or data from sources such as Wikipedia
 //! are encoded as so called bzip2 "multistreams," meaning they
 //! contain back to back chunks of bzip'd data. `BzDecoder` does not
-//! attempt to convert anything after the the first bzip chunk in the
+//! attempt to convert anything after the first bzip chunk in the
 //! source stream. Thus, if you wish to decode all bzip chunks from
 //! the input until end of file, use `MultiBzDecoder`.
 //!
