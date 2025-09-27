@@ -4,7 +4,6 @@ use std::error;
 use std::fmt;
 use std::marker;
 use std::mem;
-use std::slice;
 
 use core::ffi::{c_int, c_uint};
 
@@ -133,6 +132,35 @@ impl Compress {
         }
     }
 
+    unsafe fn compress_inner(
+        &mut self,
+        input: &[u8],
+        output_ptr: *mut u8,
+        output_len: usize,
+        action: Action,
+    ) -> Result<Status, Error> {
+        // apparently 0-length compression requests which don't actually make
+        // any progress are returned as BZ_PARAM_ERROR, which we don't want, to
+        // just translate to a success here.
+        if input.is_empty() && action == Action::Run {
+            return Ok(Status::RunOk);
+        }
+        self.inner.raw.next_in = input.as_ptr() as *mut _;
+        self.inner.raw.avail_in = input.len().min(c_uint::MAX as usize) as c_uint;
+        self.inner.raw.next_out = output_ptr as *mut _;
+        self.inner.raw.avail_out = output_len.min(c_uint::MAX as usize) as c_uint;
+        unsafe {
+            match ffi::BZ2_bzCompress(&mut *self.inner.raw, action as c_int) {
+                ffi::BZ_RUN_OK => Ok(Status::RunOk),
+                ffi::BZ_FLUSH_OK => Ok(Status::FlushOk),
+                ffi::BZ_FINISH_OK => Ok(Status::FinishOk),
+                ffi::BZ_STREAM_END => Ok(Status::StreamEnd),
+                ffi::BZ_SEQUENCE_ERROR => Err(Error::Sequence),
+                c => panic!("unknown return status: {c}"),
+            }
+        }
+    }
+
     /// Compress a block of input into a block of output.
     ///
     /// If anything other than [`BZ_OK`] is seen, `Err` is returned.
@@ -146,26 +174,17 @@ impl Compress {
         output: &mut [u8],
         action: Action,
     ) -> Result<Status, Error> {
-        // apparently 0-length compression requests which don't actually make
-        // any progress are returned as BZ_PARAM_ERROR, which we don't want, to
-        // just translate to a success here.
-        if input.is_empty() && action == Action::Run {
-            return Ok(Status::RunOk);
-        }
-        self.inner.raw.next_in = input.as_ptr() as *mut _;
-        self.inner.raw.avail_in = input.len().min(c_uint::MAX as usize) as c_uint;
-        self.inner.raw.next_out = output.as_mut_ptr() as *mut _;
-        self.inner.raw.avail_out = output.len().min(c_uint::MAX as usize) as c_uint;
-        unsafe {
-            match ffi::BZ2_bzCompress(&mut *self.inner.raw, action as c_int) {
-                ffi::BZ_RUN_OK => Ok(Status::RunOk),
-                ffi::BZ_FLUSH_OK => Ok(Status::FlushOk),
-                ffi::BZ_FINISH_OK => Ok(Status::FinishOk),
-                ffi::BZ_STREAM_END => Ok(Status::StreamEnd),
-                ffi::BZ_SEQUENCE_ERROR => Err(Error::Sequence),
-                c => panic!("unknown return status: {c}"),
-            }
-        }
+        unsafe { self.compress_inner(input, output.as_mut_ptr(), output.len(), action) }
+    }
+
+    /// Same as [`Self::compress`] but accepts an uninitialised `output` buffer.
+    pub fn compress_uninit(
+        &mut self,
+        input: &[u8],
+        output: &mut [mem::MaybeUninit<u8>],
+        action: Action,
+    ) -> Result<Status, Error> {
+        unsafe { self.compress_inner(input, output.as_mut_ptr() as *mut _, output.len(), action) }
     }
 
     /// Compress a block of input into an output vector.
@@ -179,16 +198,11 @@ impl Compress {
         output: &mut Vec<u8>,
         action: Action,
     ) -> Result<Status, Error> {
-        let cap = output.capacity();
         let len = output.len();
 
         unsafe {
             let before = self.total_out();
-            let ret = {
-                let ptr = output.as_mut_ptr().add(len);
-                let out = slice::from_raw_parts_mut(ptr, cap - len);
-                self.compress(input, out, action)
-            };
+            let ret = self.compress_uninit(input, output.spare_capacity_mut(), action);
             output.set_len((self.total_out() - before) as usize + len);
 
             ret
@@ -226,12 +240,16 @@ impl Decompress {
         }
     }
 
-    /// Decompress a block of input into a block of output.
-    pub fn decompress(&mut self, input: &[u8], output: &mut [u8]) -> Result<Status, Error> {
+    unsafe fn decompress_inner(
+        &mut self,
+        input: &[u8],
+        output_ptr: *mut u8,
+        output_len: usize,
+    ) -> Result<Status, Error> {
         self.inner.raw.next_in = input.as_ptr() as *mut _;
         self.inner.raw.avail_in = input.len().min(c_uint::MAX as usize) as c_uint;
-        self.inner.raw.next_out = output.as_mut_ptr() as *mut _;
-        self.inner.raw.avail_out = output.len().min(c_uint::MAX as usize) as c_uint;
+        self.inner.raw.next_out = output_ptr as *mut _;
+        self.inner.raw.avail_out = output_len.min(c_uint::MAX as usize) as c_uint;
         unsafe {
             match ffi::BZ2_bzDecompress(&mut *self.inner.raw) {
                 ffi::BZ_OK => Ok(Status::Ok),
@@ -246,22 +264,31 @@ impl Decompress {
         }
     }
 
+    /// Decompress a block of input into a block of output.
+    pub fn decompress(&mut self, input: &[u8], output: &mut [u8]) -> Result<Status, Error> {
+        unsafe { self.decompress_inner(input, output.as_mut_ptr(), output.len()) }
+    }
+
+    /// Same as [`Self::decompress`] but accepts an uninitialized buffer.
+    pub fn decompress_uninit(
+        &mut self,
+        input: &[u8],
+        output: &mut [mem::MaybeUninit<u8>],
+    ) -> Result<Status, Error> {
+        unsafe { self.decompress_inner(input, output.as_mut_ptr() as *mut _, output.len()) }
+    }
+
     /// Decompress a block of input into an output vector.
     ///
     /// This function will not grow `output`, but it will fill the space after
     /// its current length up to its capacity. The length of the vector will be
     /// adjusted appropriately.
     pub fn decompress_vec(&mut self, input: &[u8], output: &mut Vec<u8>) -> Result<Status, Error> {
-        let cap = output.capacity();
         let len = output.len();
 
         unsafe {
             let before = self.total_out();
-            let ret = {
-                let ptr = output.as_mut_ptr().add(len);
-                let out = slice::from_raw_parts_mut(ptr, cap - len);
-                self.decompress(input, out)
-            };
+            let ret = self.decompress_uninit(input, output.spare_capacity_mut());
             output.set_len((self.total_out() - before) as usize + len);
 
             ret
