@@ -20,7 +20,7 @@ pub struct BzDecoder<R> {
 
 impl<R: Read> BzEncoder<R> {
     /// Create a new compression stream which will compress at the given level
-    /// to read compress output to the give output stream.
+    /// to read compressed output to the given output stream.
     pub fn new(r: R, level: Compression) -> Self {
         Self {
             inner: bufread::BzEncoder::new(BufReader::new(r), level),
