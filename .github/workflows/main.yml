@@ -84,6 +84,9 @@ jobs:
     - name: Run cargo test (bzip2-sys)
       run: cargo test --no-default-features --features bzip2-sys
       if: matrix.build != 'wasm32'
+    - name: Verify that all necessary files are included for bzip2-sys
+      run: cargo package -p bzip2-sys
+      if: matrix.build != 'wasm32' 
 
   rustfmt:
     name: Rustfmt
