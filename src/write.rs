@@ -27,7 +27,7 @@ pub struct BzDecoder<W: Write> {
 
 impl<W: Write> BzEncoder<W> {
     /// Create a new compression stream which will compress at the given level
-    /// to write compress output to the give output stream.
+    /// to write compressed output to the given output stream.
     pub fn new(obj: W, level: Compression) -> Self {
         Self {
             data: Compress::new(level, 30),
